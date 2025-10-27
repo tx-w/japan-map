@@ -1,0 +1,28 @@
+/*
+#map svg {
+    width: 100%;
+    height:auto;
+    display: block;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#map path {
+  fill: #79a87a;           
+  stroke: #ffffff;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+#map path:hover,
+#map path:focus {
+  fill: #90c490;           
+  outline: none;
+} */
+
+path {
+    fill: #6f9c76;
+}
+path:hover {
+    fill: black; /* This sets a default color */
+}
