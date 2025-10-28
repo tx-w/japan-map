@@ -27,6 +27,11 @@ allPaths.forEach(path => {
         `;
 
         infoBox.style.opacity = 1;
+
+        infoBox.style.left = event.pageX + 10 + 'px';
+        infoBox.style.top = event.pageY + 10 + 'px';
+        infoBox.style.opacity = 1;
+
     });
     
     path.addEventListener('mouseout', (event) => {
