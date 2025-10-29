@@ -37,4 +37,10 @@ allPaths.forEach(path => {
     path.addEventListener('mouseout', (event) => {
         infoBox.style.opacity = 0;
     });
+
+    path.addEventListener('click', (event) => {
+        const prefectureID = event.target.id;
+        const destinationURL = `pages/${prefectureID}.html`;
+        window.location.href = destinationURL;
+    })
 });

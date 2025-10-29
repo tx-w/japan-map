@@ -3,7 +3,8 @@ path {
     fill: #6f9c76;
 }
 path:hover {
-    fill: black; 
+    fill: #587C5E; 
+    cursor: pointer;
 }
 
 #info-box{
