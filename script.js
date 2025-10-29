@@ -40,7 +40,7 @@ allPaths.forEach(path => {
 
     path.addEventListener('click', (event) => {
         const prefectureID = event.target.id;
-        const destinationURL = `pages/${prefectureID}.html`;
+        const destinationURL = `prefecture-pages/${prefectureID}.html`;
         window.location.href = destinationURL;
     })
 });

@@ -1,0 +1,56 @@
+// This file exports the list of prefectures
+// The "id" will be used for the filename (e.g., "hokkaido.html")
+// The "name" will be displayed on the page
+
+const prefectureData = [
+  { id: "hokkaido", name: "Hokkaido" },
+  { id: "aomori", name: "Aomori" },
+  { id: "iwate", name: "Iwate" },
+  { id: "miyagi", name: "Miyagi" },
+  { id: "akita", name: "Akita" },
+  { id: "yamagata", name: "Yamagata" },
+  { id: "fukushima", name: "Fukushima" },
+  { id: "ibaraki", name: "Ibaraki" },
+  { id: "tochigi", name: "Tochigi" },
+  { id: "gunma", name: "Gunma" },
+  { id: "saitama", name: "Saitama" },
+  { id: "chiba", name: "Chiba" },
+  { id: "tokyo", name: "Tokyo" },
+  { id: "kanagawa", name: "Kanagawa" },
+  { id: "niigata", name: "Niigata" },
+  { id: "toyama", name: "Toyama" },
+  { id: "ishikawa", name: "Ishikawa" },
+  { id: "fukui", name: "Fukui" },
+  { id: "yamanashi", name: "Yamanashi" },
+  { id: "nagano", name: "Nagano" },
+  { id: "gifu", name: "Gifu" },
+  { id: "shizuoka", name: "Shizuoka" },
+  { id: "aichi", name: "Aichi" },
+  { id: "mie", name: "Mie" },
+  { id: "shiga", name: "Shiga" },
+  { id: "kyoto", name: "Kyoto" },
+  { id: "osaka", name: "Osaka" },
+  { id:LET: "hyogo", name: "Hyogo" },
+  { id: "nara", name: "Nara" },
+  { id: "wakayama", name: "Wakayama" },
+  { id: "tottori", name: "Tottori" },
+  { id: "shimane", name: "Shimane" },
+  { id: "okayama", name: "Okayama" },
+  { id: "hiroshima", name: "Hiroshima" },
+  { id: "yamaguchi", name: "Yamaguchi" },
+  { id: "tokushima", name: "Tokushima" },
+  { id: "kagawa", name: "Kagawa" },
+  { id: "ehime", name: "Ehime" },
+  { id: "kochi", name: "Kochi" },
+  { id: "fukuoka", name: "Fukuoka" },
+  { id: "saga", name: "Saga" },
+  { id: "nagasaki", name: "Nagasaki" },
+  { id: "kumamoto", name: "Kumamoto" },
+  { id: "oita", name: "Oita" },
+  { id: "miyazaki", name: "Miyazaki" },
+  { id: "kagoshima", name: "Kagoshima" },
+  { id: "okinawa", name: "Okinawa" }
+];
+
+// This line makes the data available to our other script
+module.exports = prefectureData;
