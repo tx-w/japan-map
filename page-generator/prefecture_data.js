@@ -30,7 +30,7 @@ const prefectureData = [
   { id: "shiga", name: "Shiga" },
   { id: "kyoto", name: "Kyoto" },
   { id: "osaka", name: "Osaka" },
-  { id:LET: "hyogo", name: "Hyogo" },
+  { id: "hyogo", name: "Hyogo" },
   { id: "nara", name: "Nara" },
   { id: "wakayama", name: "Wakayama" },
   { id: "tottori", name: "Tottori" },
