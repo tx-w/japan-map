@@ -64,11 +64,7 @@ const prefectureData = {
   kumamoto: { name: "Kumamoto", capital: "Kumamoto City", population: "1.7M" },
   oita: { name: "Oita", capital: "Oita City", population: "1.1M" },
   miyazaki: { name: "Miyazaki", capital: "Miyazaki City", population: "1.1M" },
-  kagoshima: {
-    name: "Kagoshima",
-    capital: "Kagoshima City",
-    population: "1.6M",
-  },
+  kagoshima: { name: "Kagoshima", capital: "Kagoshima City", population: "1.6M" },
   okinawa: { name: "Okinawa", capital: "Naha", population: "1.5M" },
 };
 
@@ -99,9 +95,15 @@ allPaths.forEach((path) => {
     const destinationURL = `prefecture-pages/${prefectureID}.html`;
     window.location.href = destinationURL;
   });
+
+  window.addEventListener(
+    "pageshow",
+    () => (document.body.style.pointerEvents = "none")
+  );
+  window.addEventListener(
+    "mousemove",
+    () => (document.body.style.pointerEvents = "")
+  );
+
   
-  window.addEventListener('pageshow', () => document.body.style.pointerEvents = 'none');
-  window.addEventListener('mousemove', () => document.body.style.pointerEvents = '');
-
-
 });
