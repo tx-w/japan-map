@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Japan Routes — Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   THEME VARIABLES
+   ═══════════════════════════════════════════════ */
+:root {
+  --bg: #141820;
+  --bg-alt: #1C2130;
+  --surface: #212738;
+  --surface-hover: #2A3048;
+  --indigo: #8CA0E0;
+  --indigo-light: #A8B8F0;
+  --indigo-faint: rgba(140,160,224,0.1);
+  --coral: #F09A80;
+  --coral-light: #F0B8A0;
+  --coral-faint: rgba(240,154,128,0.15);
+  --ink: #E8E4E0;
+  --ink-light: #A0A0A0;
+  --ink-faint: #6A6A6A;
+  --border: #2E3448;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.25);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.35);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --topbar-blur: rgba(20,24,32,0.88);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 25% 15%, rgba(140,160,224,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 85%, rgba(240,154,128,0.06) 0%, transparent 50%);
+}
+
+/* ═══════════════════════════════════════════════
+   MAP VIEW
+   ═══════════════════════════════════════════════ */
+.map-view {
+  display: flex; flex-direction: column;
+  align-items: center; padding: 48px 24px 40px;
+  animation: fadeIn 0.4s ease;
+  min-height: 100vh;
+}
+.map-header { text-align: center; margin-bottom: 28px; }
+.map-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  color: var(--indigo);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+ 
+}
+.map-header h1 em { color: var(--coral); font-style: italic; }
+.map-header p { color: var(--ink-light); font-weight: 300; font-size: 1rem; margin-top: 6px; }
+
+/* Route toggle */
+.route-toggle { display: flex; gap: 6px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.route-btn {
+  padding: 8px 20px; border-radius: 100px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-family: inherit; font-size: 0.82rem; font-weight: 500;
+  color: var(--ink-light); cursor: pointer; transition: all 0.25s;
+}
+.route-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+.route-btn.active { background: var(--coral); color: #fff; border-color: var(--coral); }
+
+/* Map container */
+.map-container { width: 100%; max-width: 480px; aspect-ratio: 3/4; position: relative; }
+.map-hint {
+  text-align: center; margin-top: 16px;
+  color: var(--ink-faint); font-size: 0.82rem; animation: pulse 2s infinite;
+}
+
+/* Route summary bar */
+.route-summary {
+  display: flex; gap: 24px; align-items: center; justify-content: center;
+  margin-top: 20px; flex-wrap: wrap;
+}
+.route-summary .stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.route-summary .stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: var(--indigo);
+}
+.route-summary .stat-label {
+  font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 500;
+}
+.route-summary .divider-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--border);
+}
+
+/* ── SVG MAP STYLES ── */
+.japan-map { width: 100%; height: 100%; }
+.map-region {
+  fill: var(--bg-alt); stroke: var(--bg); stroke-width: 1.5;
+  cursor: default; transition: fill 0.3s, filter 0.3s;
+}
+.map-region.active-region {
+  fill: var(--indigo); opacity: 0.7;
+  cursor: pointer;
+}
+.map-region.active-region:hover { opacity: 1; fill: var(--indigo-light); }
+.map-dot {
+  fill: var(--coral); stroke: var(--surface); stroke-width: 2.5;
+  cursor: pointer; transition: all 0.3s;
+}
+.map-dot:hover { r: 9; }
+.map-label {
+  font-family: 'DM Sans', sans-serif; font-size: 11px;
+  fill: var(--ink-faint); pointer-events: none; font-weight: 500;
+}
+.map-label.active-label { fill: var(--indigo); font-weight: 600; }
+.route-line {
+  fill: none; stroke: var(--coral); stroke-width: 2;
+  stroke-dasharray: 6 4; stroke-linecap: round;
+  opacity: 0.6;
+}
+.route-line-animated {
+  stroke-dasharray: 800; stroke-dashoffset: 800;
+  animation: drawLine 2s ease forwards;
+}
+
+/* Tooltip */
+.map-tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-size: 0.82rem; font-weight: 500; color: var(--indigo);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap; z-index: 50;
+}
+.map-tooltip.visible { opacity: 1; transform: translateY(0); }
+.map-tooltip .tt-days { color: var(--ink-faint); font-weight: 400; margin-left: 6px; font-size: 0.75rem; }
+
+/* ═══════════════════════════════════════════════
+   DETAIL VIEW
+   ═══════════════════════════════════════════════ */
+.detail-view {
+  animation: slideUpFade 0.5s cubic-bezier(0.22,1,0.36,1);
+  padding: 0 24px 80px; max-width: 1000px; margin: 0 auto;
+}
+
+/* Top bar */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--topbar-blur);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  padding: 14px 0; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  padding: 8px 16px; border-radius: 100px;
+  font-family: inherit; font-size: 0.82rem; font-weight: 500;
+  color: var(--indigo); cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.back-btn:hover { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+
+/* Location tabs with transit */
+.loc-tabs-wrap { display: flex; align-items: center; gap: 0; overflow-x: auto; flex: 1; scrollbar-width: none; }
+.loc-tabs-wrap::-webkit-scrollbar { display: none; }
+.loc-tab {
+  padding: 8px 16px; border-radius: 100px; border: none; background: transparent;
+  font-family: inherit; font-size: 0.82rem; font-weight: 500;
+  color: var(--ink-light); cursor: pointer; white-space: nowrap; transition: all 0.25s;
+  flex-shrink: 0;
+}
+.loc-tab:hover { color: var(--ink); background: var(--indigo-faint); }
+.loc-tab.active { background: var(--indigo); color: #fff; }
+.transit-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.68rem; color: var(--ink-faint); white-space: nowrap;
+  padding: 0 4px; flex-shrink: 0;
+}
+.transit-badge .transit-icon { font-size: 0.75rem; }
+
+/* Location header */
+.loc-name {
+  font-family: 'Playfair Display', serif; font-size: 2.2rem;
+  font-weight: 700; color: var(--indigo); margin-bottom: 4px;
+}
+.loc-sub { color: var(--ink-light); font-weight: 300; font-size: 0.95rem; margin-bottom: 24px; }
+
+/* Hero gallery */
+.hero-gallery {
+  display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 8px; border-radius: var(--radius); overflow: hidden; height: 320px;
+}
+.hero-gallery .hero-img:first-child { grid-row: 1 / -1; }
+.hero-img {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.8rem; position: relative; overflow: hidden;
+}
+
+/* Section title */
+.section-title {
+  font-family: 'Playfair Display', serif; font-size: 1.25rem;
+  color: var(--ink); margin: 36px 0 6px; font-weight: 600;
+}
+
+/* ── CATEGORY FILTERS ── */
+.filters {
+  display: flex; gap: 6px; margin: 14px 0 20px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 16px; border-radius: 100px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-family: inherit; font-size: 0.78rem; font-weight: 500;
+  color: var(--ink-light); cursor: pointer; transition: all 0.25s;
+}
+.filter-btn:hover { border-color: var(--coral); color: var(--coral); }
+.filter-btn.active { background: var(--coral); color: #fff; border-color: var(--coral); }
+
+/* ── ACTIVITY CARDS GRID ── */
+.cards-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 20px;
+}
+.activity-card {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--border); overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  cursor: pointer;
+}
+.activity-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(140,160,224,0.08);
+  border-color: var(--indigo-faint);
+}
+.activity-card:hover .img-placeholder { transform: scale(1.05); }
+.activity-card.must-do { border-color: var(--coral); }
+.activity-card.must-do:hover { box-shadow: var(--shadow-lg), 0 0 30px rgba(240,154,128,0.12); }
+.activity-card.hidden-card { display: none; }
+
+/* Card image */
+.card-img { width: 100%; height: 155px; position: relative; overflow: hidden; }
+.card-img .img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  transition: transform 0.4s ease;
+}
+.card-tag {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(33,39,56,0.85); backdrop-filter: blur(8px);
+  padding: 3px 11px; border-radius: 100px;
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--indigo);
+}
+.card-budget {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+  padding: 3px 10px; border-radius: 100px;
+  font-size: 0.7rem; font-weight: 600; color: #fff;
+  letter-spacing: 0.03em;
+}
+.must-do-star {
+  position: absolute; bottom: 10px; right: 10px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--coral); color: #fff;
+  display: grid; place-items: center; font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(224,122,95,0.4);
+}
+
+/* Card body */
+.card-body { padding: 16px 20px 18px; }
+.card-body h3 {
+  font-family: 'Playfair Display', serif; font-size: 1.08rem;
+  font-weight: 600; color: var(--indigo); margin-bottom: 5px;
+}
+.card-body p {
+  font-size: 0.86rem; line-height: 1.55;
+  color: var(--ink-light); font-weight: 300;
+}
+
+/* Expandable detail */
+.card-expand {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1), padding 0.3s;
+  border-top: 0px solid var(--border);
+}
+.activity-card.expanded .card-expand {
+  max-height: 200px;
+  border-top-width: 1px;
+}
+.card-expand-inner {
+  padding: 14px 20px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.card-detail-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--ink-light);
+}
+.card-detail-row .detail-icon {
+  width: 18px; text-align: center; font-size: 0.85rem; flex-shrink: 0;
+}
+.card-detail-row a {
+  color: var(--coral); text-decoration: none; font-weight: 500;
+}
+.card-detail-row a:hover { text-decoration: underline; }
+.card-note {
+  font-size: 0.8rem; font-style: italic; color: var(--ink-faint);
+  background: var(--indigo-faint); padding: 8px 12px; border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+.expand-hint {
+  text-align: center; margin-top: 12px;
+  font-size: 0.75rem; color: var(--ink-faint);
+}
+
+/* ── EXPAND CHEVRON ── */
+.card-chevron {
+  display: flex; justify-content: center; padding: 6px 0;
+  color: var(--ink-faint); font-size: 0.7rem;
+  transition: transform 0.3s, color 0.3s;
+}
+.activity-card.expanded .card-chevron { transform: rotate(180deg); color: var(--coral); }
+
+/* ── NOISE OVERLAY ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px;
+}
+
+/* ── FOOTER ── */
+.site-footer {
+  text-align: center; padding: 40px 24px 32px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+.site-footer p {
+  color: var(--ink-faint); font-size: 0.78rem;
+  font-weight: 400; letter-spacing: 0.03em;
+}
+.site-footer .footer-jp {
+  font-size: 0.9rem; margin-bottom: 6px; opacity: 0.3;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUpFade { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+.card-stagger { animation: slideUpFade 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Hidden utility */
+.hidden { display: none !important; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .hero-gallery { height: 220px; }
+  .loc-name { font-size: 1.6rem; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .top-bar { padding: 10px 0; gap: 6px; }
+  .back-btn { padding: 6px 12px; font-size: 0.78rem; }
+  .loc-tab { padding: 6px 12px; font-size: 0.78rem; }
+  .transit-badge { font-size: 0.62rem; }
+  .map-view { padding: 32px 16px 30px; }
+  .detail-view { padding: 0 16px 60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ MAP VIEW ═══ -->
+<div class="map-view" id="mapView">
+  <div class="map-header">
+    <h1>Japan <em>Routes</em></h1>
+    <p>Click a highlighted region to explore</p>
+    <div class="route-toggle" id="routeToggle"></div>
+  </div>
+  <div class="map-container" id="mapContainer"></div>
+  <div class="route-summary" id="routeSummary"></div>
+  <p class="map-hint">tap a glowing dot on the map</p>
+  <div class="map-tooltip" id="mapTooltip"></div>
+</div>
+
+<!-- ═══ DETAIL VIEW ═══ -->
+<div class="detail-view hidden" id="detailView">
+  <div class="top-bar">
+    <button class="back-btn" onclick="backToMap()">◂ Map</button>
+    <div class="loc-tabs-wrap" id="locTabs"></div>
+  </div>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const locations = {
+  tokyo: {
+    name:'Tokyo', region:'Kantō', days:'4 nights',
+    sub:'Electric energy meets ancient tradition',
+    mapPos:{cx:285,cy:235},
+    heroEmojis:['🌃','⛩️','🗼'],
+    heroGrads:['linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#f093fb,#f5576c)','linear-gradient(135deg,#4facfe,#00f2fe)'],
+    activities:[
+      { name:'Meiji Shrine', tag:'Temple', emoji:'⛩️', desc:'Serene forest shrine in the heart of Shibuya. Arrive before 9am for peaceful walks.', grad:'linear-gradient(135deg,#2C3A6E,#4A5A99)', budget:'Free', mustDo:true, address:'1-1 Yoyogikamizonocho, Shibuya', mapLink:'https://maps.google.com/?q=Meiji+Shrine', hours:'Sunrise–Sunset', note:'The inner garden costs ¥500 and is worth it for the iris flowers in June.' },
+      { name:'Shibuya Sky', tag:'Views', emoji:'🌇', desc:'360° observation deck 230m above the famous crossing. Golden hour is magical.', grad:'linear-gradient(135deg,#E07A5F,#F0A08A)', budget:'$$', mustDo:true, address:'Shibuya Scramble Square, Shibuya', mapLink:'https://maps.google.com/?q=Shibuya+Sky', hours:'10am–10:30pm', note:'Book the rooftop slot 30 min before sunset for the best experience.' },
+      { name:'Shimokitazawa', tag:'Shopping', emoji:'🛍️', desc:'Vintage clothing, indie cafés, and vinyl record shops in narrow backstreets.', grad:'linear-gradient(135deg,#667eea,#764ba2)', budget:'$–$$', mustDo:false, address:'Shimokitazawa, Setagaya', mapLink:'https://maps.google.com/?q=Shimokitazawa', hours:'Shops open ~12pm', note:'Check out Flamingo and Chicago for the best vintage finds.' },
+      { name:'Shinjuku Ramen Alley', tag:'Food', emoji:'🍜', desc:'Tiny counters serving rich tonkotsu and miso broths until late night.', grad:'linear-gradient(135deg,#f5af19,#f12711)', budget:'$', mustDo:false, address:'Shinjuku, Kabukichō area', mapLink:'https://maps.google.com/?q=Shinjuku+Omoide+Yokocho', hours:'Open late', note:'Fuunji (つけ麺) near the south exit is a local favorite for tsukemen.' },
+      { name:'TeamLab Planets', tag:'Art', emoji:'🎨', desc:'Immersive barefoot walk through digital art installations. Book ahead.', grad:'linear-gradient(135deg,#4facfe,#00f2fe)', budget:'$$', mustDo:false, address:'6-1-16 Toyosu, Koto City', mapLink:'https://maps.google.com/?q=TeamLab+Planets', hours:'9am–9pm', note:'Wear shorts or pants you can roll up — you walk through water.' },
+    ]
+  },
+  hakone: {
+    name:'Hakone', region:'Kantō', days:'1 night',
+    sub:'Mountain escape with hot springs & Fuji views',
+    mapPos:{cx:278,cy:248},
+    heroEmojis:['♨️','🗻','🚠'],
+    heroGrads:['linear-gradient(135deg,#a8edea,#fed6e3)','linear-gradient(135deg,#d299c2,#fef9d7)','linear-gradient(135deg,#89f7fe,#66a6ff)'],
+    activities:[
+      { name:'Ryokan Onsen', tag:'Relax', emoji:'♨️', desc:'Traditional inn with private hot spring baths and kaiseki dinner.', grad:'linear-gradient(135deg,#a18cd1,#fbc2eb)', budget:'$$$', mustDo:true, address:'Hakone-machi, Ashigarashimo', mapLink:'https://maps.google.com/?q=Hakone+Ryokan', hours:'Check-in 3pm', note:'Book Hakone Ginyu or Gora Kadan for the best experience. Reserve months ahead.' },
+      { name:'Owakudani Valley', tag:'Nature', emoji:'🌋', desc:'Volcanic valley with steam vents. Try the black eggs boiled in sulfur springs.', grad:'linear-gradient(135deg,#606c88,#3f4c6b)', budget:'$', mustDo:false, address:'Owakudani, Hakone', mapLink:'https://maps.google.com/?q=Owakudani', hours:'9am–4pm', note:'Each black egg supposedly adds 7 years to your life.' },
+      { name:'Lake Ashi Cruise', tag:'Sights', emoji:'🚢', desc:'Pirate ship cruise with Mt. Fuji views on clear days. Part of the Hakone loop.', grad:'linear-gradient(135deg,#4facfe,#00f2fe)', budget:'$', mustDo:false, address:'Hakone-machi Port', mapLink:'https://maps.google.com/?q=Lake+Ashi+Cruise', hours:'9:30am–5pm', note:'Clear mornings in winter give the best Fuji views. Covered by Hakone Free Pass.' },
+    ]
+  },
+  kyoto: {
+    name:'Kyoto', region:'Kansai', days:'3 nights',
+    sub:'Temples, tea, and golden light',
+    mapPos:{cx:222,cy:257},
+    heroEmojis:['🎋','🍵','🏯'],
+    heroGrads:['linear-gradient(135deg,#fbc2eb,#a6c1ee)','linear-gradient(135deg,#fdcbf1,#e6dee9)','linear-gradient(135deg,#a18cd1,#fbc2eb)'],
+    activities:[
+      { name:'Fushimi Inari', tag:'Temple', emoji:'⛩️', desc:'Thousands of vermilion torii gates winding up the mountainside. Go at dawn.', grad:'linear-gradient(135deg,#E07A5F,#764ba2)', budget:'Free', mustDo:true, address:'68 Fukakusa, Fushimi-ku', mapLink:'https://maps.google.com/?q=Fushimi+Inari', hours:'24 hours', note:'The full hike takes ~2hrs. Most tourists stop at the first viewpoint — keep going.' },
+      { name:'Arashiyama Bamboo', tag:'Nature', emoji:'🎋', desc:'Towering bamboo grove with filtered light. Early morning avoids the crowds.', grad:'linear-gradient(135deg,#56ab2f,#a8e063)', budget:'Free', mustDo:true, address:'Sagatenryuji, Ukyo-ku', mapLink:'https://maps.google.com/?q=Arashiyama+Bamboo+Grove', hours:'Always open', note:'Rent a bike to also hit the monkey park and Togetsukyo Bridge in one loop.' },
+      { name:'Kinkaku-ji', tag:'Temple', emoji:'🏯', desc:'The iconic golden pavilion reflected perfectly in the mirror pond.', grad:'linear-gradient(135deg,#f5af19,#f12711)', budget:'$', mustDo:false, address:'1 Kinkakujicho, Kita-ku', mapLink:'https://maps.google.com/?q=Kinkakuji', hours:'9am–5pm', note:'Pair with Ryoan-ji rock garden nearby for a peaceful afternoon.' },
+      { name:'Uji Matcha District', tag:'Food', emoji:'🍵', desc:"Source of Japan's finest matcha. Tea tastings and parfaits everywhere.", grad:'linear-gradient(135deg,#11998e,#38ef7d)', budget:'$', mustDo:false, address:'Uji, Kyoto Prefecture', mapLink:'https://maps.google.com/?q=Uji+Kyoto', hours:'Shops 9am–5pm', note:'Nakamura Tokichi has the best matcha parfait. The wait is worth it.' },
+    ]
+  },
+  osaka: {
+    name:'Osaka', region:'Kansai', days:'2 nights',
+    sub:'Non-stop food crawl and nightlife',
+    mapPos:{cx:230,cy:268},
+    heroEmojis:['🐙','🎮','🍺'],
+    heroGrads:['linear-gradient(135deg,#ff9a9e,#fecfef)','linear-gradient(135deg,#ffecd2,#fcb69f)','linear-gradient(135deg,#fa709a,#fee140)'],
+    activities:[
+      { name:'Dōtonbori', tag:'Food', emoji:'🐙', desc:'Neon-lit canal street famous for takoyaki, okonomiyaki, and giant signs.', grad:'linear-gradient(135deg,#ff9a9e,#fecfef)', budget:'$', mustDo:true, address:'Dōtonbori, Chuo-ku', mapLink:'https://maps.google.com/?q=Dotonbori+Osaka', hours:'Open late', note:'Kukuru has the best takoyaki. Eat at the canal edge for the full vibe.' },
+      { name:'Osaka Castle', tag:'Sights', emoji:'🏯', desc:'Dramatic castle surrounded by moats and cherry trees. Great park for walking.', grad:'linear-gradient(135deg,#2C3A6E,#4A5A99)', budget:'$', mustDo:false, address:'1-1 Osakajo, Chuo-ku', mapLink:'https://maps.google.com/?q=Osaka+Castle', hours:'9am–5pm', note:'The interior museum is skippable — the grounds and moat are the real attraction.' },
+      { name:'Shinsekai', tag:'Nightlife', emoji:'🍺', desc:'Retro district with kushikatsu joints, cheap beers, and Tsutenkaku Tower.', grad:'linear-gradient(135deg,#f12711,#f5af19)', budget:'$', mustDo:false, address:'Ebisuhigashi, Naniwa-ku', mapLink:'https://maps.google.com/?q=Shinsekai+Osaka', hours:'Open late', note:'Rule #1 of kushikatsu: never double-dip in the communal sauce.' },
+      { name:'Den Den Town', tag:'Shopping', emoji:'🎮', desc:"Osaka's Akihabara — retro games, anime merch, and arcade floors.", grad:'linear-gradient(135deg,#667eea,#764ba2)', budget:'$–$$', mustDo:false, address:'Nipponbashi, Naniwa-ku', mapLink:'https://maps.google.com/?q=Den+Den+Town+Osaka', hours:'11am–8pm', note:'Super Potato for retro games, Mandarake for rare manga and figures.' },
+    ]
+  },
+  hiroshima: {
+    name:'Hiroshima', region:'Chūgoku', days:'2 nights',
+    sub:'Sobering history and island beauty',
+    mapPos:{cx:175,cy:272},
+    heroEmojis:['🕊️','⛩️','🍁'],
+    heroGrads:['linear-gradient(135deg,#a1c4fd,#c2e9fb)','linear-gradient(135deg,#d4fc79,#96e6a1)','linear-gradient(135deg,#84fab0,#8fd3f4)'],
+    activities:[
+      { name:'Peace Memorial', tag:'History', emoji:'🕊️', desc:'The museum and park are deeply moving. Allow at least 2-3 hours.', grad:'linear-gradient(135deg,#2C3A6E,#4A5A99)', budget:'$', mustDo:true, address:'1-2 Nakajimacho, Naka-ku', mapLink:'https://maps.google.com/?q=Hiroshima+Peace+Memorial', hours:'8:30am–6pm', note:'Audio guide is excellent and included. Bring tissues.' },
+      { name:'Miyajima Island', tag:'Temple', emoji:'⛩️', desc:'Iconic floating torii gate, wild deer, and amazing grilled oysters.', grad:'linear-gradient(135deg,#E07A5F,#F0A08A)', budget:'$', mustDo:true, address:'Miyajima, Hatsukaichi', mapLink:'https://maps.google.com/?q=Miyajima+Island', hours:'Ferry runs 6am–11pm', note:'Stay until dusk to see the torii gate lit up. The crowd thins after 4pm.' },
+      { name:'Momiji Manju', tag:'Food', emoji:'🍁', desc:'Maple leaf-shaped cakes with custard, chocolate, or red bean filling.', grad:'linear-gradient(135deg,#f5af19,#f12711)', budget:'$', mustDo:false, address:'Miyajima shopping street', mapLink:'https://maps.google.com/?q=Miyajima+Shopping+Street', hours:'9am–5pm', note:'Get them fresh and warm from the shops near the ferry terminal.' },
+    ]
+  },
+};
+
+const transitInfo = {
+  'tokyo>hakone': { text:'1.5hr Romance Car', icon:'🚃' },
+  'hakone>kyoto': { text:'3hr Shinkansen', icon:'🚄' },
+  'tokyo>kyoto': { text:'2hr 15min Shinkansen', icon:'🚄' },
+  'kyoto>osaka': { text:'15min Shinkansen', icon:'🚄' },
+  'osaka>hiroshima': { text:'1.5hr Shinkansen', icon:'🚄' },
+  'hiroshima>kyoto': { text:'1hr 40min Shinkansen', icon:'🚄' },
+  'osaka>kyoto': { text:'15min Shinkansen', icon:'🚄' },
+  'tokyo>osaka': { text:'2.5hr Shinkansen', icon:'🚄' },
+  'kyoto>hiroshima': { text:'1hr 40min Shinkansen', icon:'🚄' },
+  'hiroshima>hakone': { text:'4hr Shinkansen', icon:'🚄' },
+  'tokyo>hiroshima': { text:'4hr Shinkansen', icon:'🚄' },
+};
+
+const routes = {
+  golden: { name:'Golden Route', keys:['tokyo','hakone','kyoto','osaka'], vibe:'Classic first-timer itinerary' },
+  south:  { name:'Southern Explorer', keys:['osaka','hiroshima','kyoto'], vibe:'History, food & temples' },
+  deep:   { name:'Deep Dive', keys:['tokyo','kyoto','osaka','hiroshima','hakone'], vibe:'See it all — 12 nights' },
+};
+
+let currentRoute = 'golden';
+let currentLoc = null;
+let activeFilter = 'all';
+
+// ═══════════════════════════════════════════════
+// MAP SVG
+// ═══════════════════════════════════════════════
+function buildMapSVG(activeKeys) {
+  // Build route polyline
+  const points = activeKeys.map(k => locations[k]?.mapPos).filter(Boolean);
+  const polyPoints = points.map(p => `${p.cx},${p.cy}`).join(' ');
+
+  return `
+  <svg viewBox="100 60 260 340" class="japan-map" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Hokkaido -->
+    <path class="map-region" d="M270,80 Q290,75 310,82 Q325,90 330,105 Q325,120 310,125 Q295,128 280,120 Q268,110 265,95 Z"/>
+    <!-- Tohoku -->
+    <path class="map-region" d="M275,130 Q290,125 300,135 Q305,155 300,175 Q290,185 278,180 Q268,170 265,155 Q267,140 275,130 Z"/>
+    <!-- Kanto -->
+    <path class="map-region ${activeKeys.some(k=>['tokyo','hakone'].includes(k))?'active-region':''}"
+      data-locs="tokyo,hakone" d="M265,185 Q278,180 295,190 Q300,205 295,220 Q285,235 270,238 Q258,232 255,218 Q256,200 265,185 Z"/>
+    <!-- Chubu -->
+    <path class="map-region" d="M240,195 Q255,188 265,195 Q262,215 255,230 Q242,238 230,232 Q225,220 228,208 Z"/>
+    <!-- Kansai -->
+    <path class="map-region ${activeKeys.some(k=>['kyoto','osaka'].includes(k))?'active-region':''}"
+      data-locs="kyoto,osaka" d="M215,235 Q232,228 245,238 Q248,252 240,265 Q228,275 215,270 Q205,260 207,248 Z"/>
+    <!-- Chugoku -->
+    <path class="map-region ${activeKeys.includes('hiroshima')?'active-region':''}"
+      data-locs="hiroshima" d="M165,248 Q180,240 200,245 Q210,255 207,268 Q198,278 182,280 Q168,275 160,265 Q158,255 165,248 Z"/>
+    <!-- Shikoku -->
+    <path class="map-region" d="M190,282 Q205,278 218,285 Q222,295 215,305 Q200,310 188,305 Q182,295 190,282 Z"/>
+    <!-- Kyushu -->
+    <path class="map-region" d="M148,278 Q162,272 170,280 Q175,295 172,310 Q165,325 152,328 Q140,322 138,308 Q140,292 148,278 Z"/>
+    <circle cx="135" cy="375" r="5" class="map-region"/>
+    <circle cx="128" cy="365" r="3" class="map-region"/>
+
+    <!-- Route line -->
+    <polyline class="route-line route-line-animated" points="${polyPoints}" filter="url(#glow)"/>
+
+    <!-- Dots + labels -->
+    ${activeKeys.map(k => {
+      const loc = locations[k];
+      if(!loc) return '';
+      return `<circle class="map-dot" data-loc="${k}" cx="${loc.mapPos.cx}" cy="${loc.mapPos.cy}" r="6.5" filter="url(#glow)"/>
+              <text class="map-label active-label" x="${loc.mapPos.cx+13}" y="${loc.mapPos.cy+4}">${loc.name}</text>`;
+    }).join('')}
+  </svg>`;
+}
+
+// ═══════════════════════════════════════════════
+// MAP RENDER
+// ═══════════════════════════════════════════════
+function renderMap() {
+  const route = routes[currentRoute];
+  const keys = route.keys;
+  document.getElementById('mapContainer').innerHTML = buildMapSVG(keys);
+
+  // Route summary
+  const totalDays = keys.reduce((sum, k) => {
+    const d = locations[k]?.days || '';
+    const n = parseInt(d) || 0;
+    return sum + (n || 1);
+  }, 0);
+  document.getElementById('routeSummary').innerHTML = `
+    <div class="stat"><span class="stat-value">${keys.length}</span><span class="stat-label">Stops</span></div>
+    <span class="divider-dot"></span>
+    <div class="stat"><span class="stat-value">${totalDays}</span><span class="stat-label">Nights</span></div>
+    <span class="divider-dot"></span>
+    <div class="stat"><span class="stat-value" style="font-size:1rem;font-family:'DM Sans',sans-serif;font-weight:400;color:var(--ink-light);">${route.vibe}</span><span class="stat-label">Vibe</span></div>
+  `;
+
+  // Click events
+  document.querySelectorAll('#mapContainer .active-region').forEach(el => {
+    el.addEventListener('click', () => {
+      const locs = el.dataset.locs.split(',').filter(l => keys.includes(l));
+      if(locs.length) showDetail(locs[0]);
+    });
+  });
+  document.querySelectorAll('#mapContainer .map-dot').forEach(el => {
+    el.addEventListener('click', () => showDetail(el.dataset.loc));
+    // Tooltip
+    el.addEventListener('mouseenter', e => showTooltip(e, el.dataset.loc));
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════
+function showTooltip(e, key) {
+  const loc = locations[key];
+  if(!loc) return;
+  const tt = document.getElementById('mapTooltip');
+  const mapRect = document.getElementById('mapContainer').getBoundingClientRect();
+  tt.innerHTML = `${loc.name} <span class="tt-days">${loc.days}</span>`;
+  tt.classList.add('visible');
+  const x = e.clientX - mapRect.left + 14;
+  const y = e.clientY - mapRect.top - 10;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+function hideTooltip() {
+  document.getElementById('mapTooltip').classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════
+// DETAIL VIEW
+// ═══════════════════════════════════════════════
+function showDetail(key) {
+  currentLoc = key;
+  activeFilter = 'all';
+  const keys = routes[currentRoute].keys;
+
+  document.getElementById('mapView').classList.add('hidden');
+  document.getElementById('detailView').classList.remove('hidden');
+
+  // Build tabs with transit
+  let tabsHTML = '';
+  keys.forEach((k, i) => {
+    if(i > 0) {
+      const prev = keys[i-1];
+      const tKey = `${prev}>${k}`;
+      const t = transitInfo[tKey];
+      if(t) tabsHTML += `<span class="transit-badge"><span class="transit-icon">${t.icon}</span>${t.text}</span>`;
+      else tabsHTML += `<span class="transit-badge">→</span>`;
+    }
+    tabsHTML += `<button class="loc-tab ${k===key?'active':''}" onclick="switchLoc('${k}')">${locations[k].name}</button>`;
+  });
+  document.getElementById('locTabs').innerHTML = tabsHTML;
+
+  renderDetail(key);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchLoc(key) {
+  currentLoc = key;
+  activeFilter = 'all';
+  document.querySelectorAll('.loc-tab').forEach(t => t.classList.toggle('active', t.textContent === locations[key].name));
+  renderDetail(key);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderDetail(key) {
+  const loc = locations[key];
+  const tags = ['all', ...new Set(loc.activities.map(a => a.tag))];
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="loc-name">${loc.name}</div>
+    <div class="loc-sub">${loc.sub} — ${loc.days}</div>
+    <div class="hero-gallery">
+      ${loc.heroEmojis.map((e,i) => `
+        <div class="hero-img" style="background:${loc.heroGrads[i]};">${e}</div>
+      `).join('')}
+    </div>
+    <div class="section-title">Things to Do</div>
+    <div class="filters" id="filters">
+      ${tags.map(t => `
+        <button class="filter-btn ${t==='all'?'active':''}" onclick="setFilter('${t}')">${t === 'all' ? 'All' : t}</button>
+      `).join('')}
+    </div>
+    <div class="cards-grid" id="cardsGrid">
+      ${loc.activities.map((a,i) => `
+        <div class="activity-card card-stagger ${a.mustDo?'must-do':''}" style="animation-delay:${i*0.08}s;" data-tag="${a.tag}" onclick="toggleExpand(this, event)">
+          <div class="card-img">
+            <div class="img-placeholder" style="background:${a.grad};">${a.emoji}</div>
+            <div class="card-tag">${a.tag}</div>
+            <div class="card-budget">${a.budget}</div>
+            ${a.mustDo ? '<div class="must-do-star">★</div>' : ''}
+          </div>
+          <div class="card-body">
+            <h3>${a.name}</h3>
+            <p>${a.desc}</p>
+          </div>
+          <div class="card-expand">
+            <div class="card-expand-inner">
+              <div class="card-detail-row"><span class="detail-icon">📍</span> ${a.address}</div>
+              <div class="card-detail-row"><span class="detail-icon">🕐</span> ${a.hours}</div>
+              <div class="card-detail-row"><span class="detail-icon">🗺️</span> <a href="${a.mapLink}" target="_blank">Open in Google Maps</a></div>
+              ${a.note ? `<div class="card-note">💡 ${a.note}</div>` : ''}
+            </div>
+          </div>
+          <div class="card-chevron">▾</div>
+        </div>
+      `).join('')}
+    </div>
+    <p class="expand-hint">click any card to see details, maps & tips</p>
+    <footer class="site-footer">
+      <p class="footer-jp">良い旅を</p>
+      <p>Japan 2026 — route explorer</p>
+    </footer>
+  `;
+}
+
+function toggleExpand(card, e) {
+  if(e.target.tagName === 'A') return;
+  card.classList.toggle('expanded');
+}
+
+function setFilter(tag) {
+  activeFilter = tag;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent === (tag==='all'?'All':tag)));
+  document.querySelectorAll('.activity-card').forEach(c => {
+    if(tag === 'all') c.classList.remove('hidden-card');
+    else c.classList.toggle('hidden-card', c.dataset.tag !== tag);
+  });
+}
+
+function backToMap() {
+  document.getElementById('detailView').classList.add('hidden');
+  document.getElementById('mapView').classList.remove('hidden');
+  renderMap();
+}
+
+// ═══════════════════════════════════════════════
+// ROUTE TOGGLE
+// ═══════════════════════════════════════════════
+function buildRouteToggle() {
+  document.getElementById('routeToggle').innerHTML = Object.entries(routes).map(([k,r]) =>
+    `<button class="route-btn ${k===currentRoute?'active':''}" onclick="switchRoute('${k}')">${r.name}</button>`
+  ).join('');
+}
+function switchRoute(key) {
+  currentRoute = key;
+  buildRouteToggle();
+  renderMap();
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+buildRouteToggle();
+renderMap();
+</script>
+</body>
+</html>
