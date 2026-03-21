@@ -20,9 +20,53 @@ body {
   flex-direction: column;
 }
 
+
 #title {
+  text-align: center;
+}
+
+h1 {
   font-size: 64px;
   font-weight: 700;
   color: var(--accent);
+  margin: 0;
+  padding-top: 30px;
+  
+}
+
+#title > p {
+  font-size: 16px;
+  margin: 0;
+}
+.map {
+  width: 75vw;
+}
+
+#routetoggle {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  padding: 25px;
+}
+
+#routetoggle > button {
+  padding: 10px 30px;
+  background-color: #262337;
+  border-color: #eb6f93;
+  box-shadow: 0 0 10px rgba(235,111,147,0.3);
+  color: var(--text);
+  border-radius: 20px;
+}
+
+#routetoggle > button.active {
+  background-color: #eb6f93;
+  border-color: transparent;  
+
+}
+
+.svg {
+  height: auto;
+  width: 100%;
 }
 
